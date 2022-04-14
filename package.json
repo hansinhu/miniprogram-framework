@@ -1,0 +1,14 @@
+{
+  "name": "miniprogram-framework",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "",
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "http-server": "^14.0.0"
+  },
+  "scripts": {
+    "server": "http-server ./ -c=-1"
+  }
+}
