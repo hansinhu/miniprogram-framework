@@ -15,11 +15,11 @@ let pageRoot;
 
 function __pageRender__(message) {
   const { path, data } = message;
-  const xmlFn = require(path + ".xml");
+  const tymlFn = require(path + ".tyml");
   // 页面 vnode 树
-  const nodeTree = xmlFn(data);
+  const nodeTree = tymlFn(data);
 
-  const cssFn = require(path + ".css");
+  const cssFn = require(path + ".tyss");
 
   // 添加页面样式
   cssFn();
@@ -36,8 +36,8 @@ function __pageRender__(message) {
 
 function __pageUpdate__(message) {
   const { path, data } = message;
-  const xmlFn = require(path + ".xml");
-  const newVNodeTree = xmlFn(data);
+  const tymlFn = require(path + ".tyml");
+  const newVNodeTree = tymlFn(data);
 
   // 计算 vnode 树的节点变更
   const patches = VirtualNode.diff(pageVNodeTree, newVNodeTree);

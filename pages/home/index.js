@@ -1,29 +1,93 @@
-/**
- * 渲染层启动
- */
-
-__pageCurrentFile__ = __pagePath__ + ".css";
-define(__pageCurrentFile__, function (require, module, exports) {
-  module.exports = function () {
-    // TODO: setCssToHead  实现该方法
-    const style = document.createElement("style");
-    const css = document.createTextNode(`
-    ty-page{
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-    .title {padding: 20px; font-size: 28px}
-    .foo{color: #3029E6; padding: 0 40px;}
-    .color0{color:#E8CA8B; }
-    .color1{color:#DD9EBB; }
-    .color2{color:#C4E8F6; }
-    .color3{color:#A5C56D; }
-    .color4{color:#33531D; }`);
-    style.appendChild(css);
-    document.head.appendChild(style);
-  };
+App({
+  globalData: {
+    foo: "bar",
+  },
+  onLaunch(options) {
+    console.warn("app.onLaunch", options);
+    console.log(this);
+  },
+  onShow() {
+    console.warn("app.onShow", Date.now());
+  },
+  onHide() {
+    console.warn("app.onHide", Date.now());
+  },
+  onError(error) {
+    console.warn("app.onError", error);
+  },
 });
 
-__appCode__[__pageCurrentFile__] = require(__pageCurrentFile__);
+// 由构建器合并代码时按顺序拼接
+__corePath__ = "pages/home/index";
+__coreCurrentFile__ = __corePath__ + ".js";
+
+define(__coreCurrentFile__, function (require, module, exports, window) {
+  Page({
+    data: {
+      name: "页面数据",
+      prop: "color0",
+      index: 0,
+    },
+    onLoad(options) {
+      console.warn("home.onLoad", options);
+      this.setData({ hello: "world", name: "点我更新" });
+      console.log("getCurrentPages", getCurrentPages());
+    },
+    onShow() {
+      console.warn("home.onShow");
+    },
+    onReady() {
+      console.warn("home.onReady");
+    },
+    onHide() {
+      console.warn("home.onHide");
+    },
+    onUnload() {
+      console.warn("home.onUnload");
+    },
+    handleTap(event) {
+      console.warn("abc", event);
+      const index = this.data.index;
+      this.setData({
+        index: index + 1,
+        name: Date.now() + "",
+        prop: "color" + ((index + 1) % 5),
+      });
+    },
+  });
+});
+
+try {
+  require(__coreCurrentFile__);
+} catch (err) {
+  console.log(__coreCurrentFile__ + " 错误", err);
+  throw err;
+}
+
+// __corePath__ = "ty-view";
+// __coreCurrentFile__ = __corePath__ + ".js";
+
+// define(__coreCurrentFile__, function (require, module, exports) {
+//   Component({
+//     properties: {
+//       class: {
+//         type: String,
+//         observer(newValue, oldValue) {
+//           console.log(
+//             `ty-view property observer new: "${newValue}", old: "${oldValue}"`
+//           );
+//         },
+//       },
+//     },
+//     data: {
+//       inner: "内部数据",
+//     },
+//   });
+// });
+
+// try {
+//   require(__coreCurrentFile__);
+// } catch (err) {
+//   console.log(__coreCurrentFile__ + " 错误", err);
+//   throw err;
+// }

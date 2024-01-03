@@ -1,4 +1,4 @@
-import exparser from "../exparser/index.js";
+import appEngine from "../app-engine/index.js";
 import clone from "../util/clone.js";
 
 class Component {
@@ -20,7 +20,7 @@ class Component {
   }
 
   get config() {
-    return exparser.getComponentConfig(this.tagName) || {};
+    return appEngine.getComponentConfig(this.tagName) || {};
   }
 
   get properties() {
@@ -79,7 +79,11 @@ class Component {
   triggerPropertyObserver(propName, newValue, oldValue) {
     const properties = this.properties;
     const propertyConfig = properties[propName];
-    if (propertyConfig && typeof propertyConfig.observer === "function" && newValue !== oldValue) {
+    if (
+      propertyConfig &&
+      typeof propertyConfig.observer === "function" &&
+      newValue !== oldValue
+    ) {
       propertyConfig.observer(newValue, oldValue);
     }
   }

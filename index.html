@@ -1,104 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>小程序容器</title>
-    <style>
-      * {
-        margin: 0;
-      }
-      body {
-        min-height: 100vh;
-      }
-    </style>
-  </head>
 
-  <body>
-    <script>
-      // 默认打开首页
-      if (!location.search) {
-        location.href = location.href + "?path=pages/home/index&query=" + encodeURIComponent("a=1");
-      }
-    </script>
-    <!-- 实现双进程间的通信机制 -->
-    <script>
-      let processChannel = {}; // 进程通道管理
-      let processMessageQueue = []; // 进程事件池
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小程序容器</title>
+  <style>
+    * {
+      margin: 0;
+    }
 
-      const params = new URLSearchParams(location.search);
-      const query = Object.fromEntries(params.entries());
+    body {
+      min-height: 100vh;
+    }
+  </style>
+</head>
 
-      document.write(`<iframe src="./service.html${location.search}" id="service" style="border: none; width: 0; height: 0;"></iframe>`);
-      document.write(`<iframe src="./${query.path}.html?${params.get("query")}" id="${query.path}" style="border: none; width: 100%; height: 100%;"></iframe>`);
+<body>
+  <script>
+    // 默认打开首页
+    if (!location.search) {
+      location.href = location.href + "?path=pages/home/index&query=" + encodeURIComponent("a=1");
+    }
+  </script>
+  <!-- 实现双进程间的通信机制 -->
+  <script>
+    let processChannel = {}; // 进程通道管理
+    let processMessageQueue = []; // 进程事件池
 
-      function getRenderer(path) {
-        const iframe = document.getElementById(path);
-        return iframe.contentWindow;
-      }
+    const params = new URLSearchParams(location.search);
+    const query = Object.fromEntries(params.entries());
 
-      function getService() {
-        const iframe = document.getElementById("service");
-        return iframe.contentWindow;
-      }
+    document.write(`<iframe src="./service.html${location.search}" id="service" style="border: none; width: 0; height: 0;"></iframe>`);
+    document.write(`<iframe src="./render.html?${params.get("query")}" id="${query.path}" style="border: none; width: 100%; height: 100%;"></iframe>`);
 
-      // 检测是否存在事件队列
-      function checkProcessMessage(from, channel) {
-        let matchMessage;
-        if (from === "service") {
-          matchMessage = processMessageQueue.filter((message) => message.from === from && message.path === channel);
-        } else {
-          matchMessage = processMessageQueue.filter((message) => message.from === from);
-        }
+    function getRenderer(path) {
+      const iframe = document.getElementById(path);
+      return iframe.contentWindow;
+    }
 
-        matchMessage.forEach((message) => {
-          const { from, ...actionData } = message;
-          processChannel[channel].postMessage(actionData);
-        });
+    function getService() {
+      const iframe = document.getElementById("service");
+      return iframe.contentWindow;
+    }
 
-        processMessageQueue = processMessageQueue.filter((message) => !matchMessage.includes(message));
+    // 检测是否存在事件队列
+    function checkProcessMessage(from, channel) {
+      let matchMessage;
+      if (from === "service") {
+        matchMessage = processMessageQueue.filter((message) => message.from === from && message.path === channel);
+      } else {
+        matchMessage = processMessageQueue.filter((message) => message.from === from);
       }
 
-      window.addEventListener("message", function (event) {
-        const message = event.data;
-        const { from, action, path } = message;
-        if (action === "process_finished") {
-          // 进程 ready
-          if (from === "service") {
-            // 主进程通道 ready
-            processChannel["service"] = getService();
-            // 确认是否存在来自渲染进程的事件队列
-            // 如果有发送到 service
-            checkProcessMessage("renderer", "service");
-          } else {
-            // 页面渲染进程通道 ready
-            processChannel[path] = getRenderer(path);
-            // 确认是否存在来自主进程的事件队列
-            // 如果有且 等于 path 就发送给渲染进程 service
-            checkProcessMessage("service", path);
-          }
-          return;
-        }
-
-        if (from === "service") {
-          const { from, ...actionData } = message;
-          // 主进程来的消息，发送到目标渲染进程
-          if (processChannel[path]) {
-            processChannel[path].postMessage(actionData);
-          } else {
-            processMessageQueue.push(message);
-          }
-        } else {
-          const { from, ...actionData } = message;
-          // 渲染进程来的消息，发送到逻辑层
-          if (processChannel.service) {
-            processChannel.service.postMessage(actionData);
-          } else {
-            processMessageQueue.push(message);
-          }
-        }
+      matchMessage.forEach((message) => {
+        const { from, ...actionData } = message;
+        processChannel[channel].postMessage(actionData);
       });
-    </script>
-  </body>
+
+      processMessageQueue = processMessageQueue.filter((message) => !matchMessage.includes(message));
+    }
+
+    window.addEventListener("message", function (event) {
+      const message = event.data;
+      const { from, action, path } = message;
+      if (action === "process_finished") {
+        // 进程 ready
+        if (from === "service") {
+          // 主进程通道 ready
+          processChannel["service"] = getService();
+          // 确认是否存在来自渲染进程的事件队列
+          // 如果有发送到 service
+          checkProcessMessage("renderer", "service");
+        } else {
+          // 页面渲染进程通道 ready
+          processChannel[path] = getRenderer(path);
+          // 确认是否存在来自主进程的事件队列
+          // 如果有且 等于 path 就发送给渲染进程 service
+          checkProcessMessage("service", path);
+        }
+        return;
+      }
+
+      if (from === "service") {
+        const { from, ...actionData } = message;
+        // 主进程来的消息，发送到目标渲染进程
+        if (processChannel[path]) {
+          processChannel[path].postMessage(actionData);
+        } else {
+          processMessageQueue.push(message);
+        }
+      } else {
+        const { from, ...actionData } = message;
+        // 渲染进程来的消息，发送到逻辑层
+        if (processChannel.service) {
+          processChannel.service.postMessage(actionData);
+        } else {
+          processMessageQueue.push(message);
+        }
+      }
+    });
+  </script>
+</body>
+
 </html>
